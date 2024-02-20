@@ -13,10 +13,10 @@ main :: proc() {
     file, success := os.read_entire_file_from_handle(handle)
     lines := strings.split(string(file), "\n")
     for line in lines {
-        sum += parseString(line)
+        sum += parseString2(line)
     }
-    fmt.println("Analysis complete! Sum of game IDs:", sum)
-    // fmt.println(parseString("Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red"))
+    fmt.println("Analysis complete! Power sum of games:", sum)
+    // fmt.println(parseString2("Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red"))
 }
 
 CUBELIMITS := map[string]i64 {
@@ -43,4 +43,30 @@ parseString :: proc(game: string) -> i64 {
         }
     }
     return id
+}
+
+parseString2 :: proc(game: string) -> i64 {
+    product: i64 = 1
+    cubeminimum := map[string]i64 {
+        "red" = 0,
+        "blue" = 0,
+        "green" = 0,
+    }
+    substrings := [?]string {": ", "; "}
+    gameSplit, _ := strings.split_multi(game, substrings[:])
+    for round in gameSplit[1:] {
+        roundClean, _ := strings.replace(round, "\r", "", -1)
+        roundSplit := strings.split(roundClean, ", ")
+        for cube in roundSplit {
+            cubeFmt := strings.split(cube, " ")
+            cubeNum, _ := strconv.parse_i64(cubeFmt[0])
+            if cubeNum > cubeminimum[cubeFmt[1]] {
+                cubeminimum[cubeFmt[1]] = cubeNum
+            }
+        }
+    }
+    for color in cubeminimum {
+        product *= cubeminimum[color]
+    }
+    return product
 }
