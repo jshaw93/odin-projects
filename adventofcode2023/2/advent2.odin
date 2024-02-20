@@ -52,6 +52,7 @@ parseString2 :: proc(game: string) -> i64 {
         "blue" = 0,
         "green" = 0,
     }
+    defer delete(cubeminimum)
     substrings := [?]string {": ", "; "}
     gameSplit, _ := strings.split_multi(game, substrings[:])
     for round in gameSplit[1:] {
