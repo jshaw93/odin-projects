@@ -44,7 +44,6 @@ main :: proc() {
     thread.pool_init(&pool, allocator=context.allocator, thread_count=6)
     defer thread.pool_destroy(&pool)
     thread.pool_start(&pool)
-    // threadAllocator :: mem.dynamic_pool_allocator()
     for i, ii in seeds { // fill seed map 1 with relevant seeds
         data := new(TaskData)
         data.lines = lines
