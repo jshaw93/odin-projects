@@ -4,24 +4,17 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 import "core:strconv"
-import "core:thread"
-import "core:time"
-import "core:mem"
+import "core:math"
 
-Seed :: struct {
-    soil: i64,
-    fert: i64,
-    water: i64,
-    light: i64,
-    temp: i64,
-    humidity: i64,
-    loc: i64,
+Instruction :: struct {
+    destRangeStart: int,
+    srcRangeStart: int,
+    rangeLen: int,
 }
 
-TaskData :: struct {
-    lines: []string,
-    seed: i64,
-    seedStruct: Seed,
+Range :: struct {
+    start: int,
+    end: int,
 }
 
 main :: proc() {
@@ -31,164 +24,106 @@ main :: proc() {
     lines, _ := strings.split(string(file), "\r\n\r\n")
     defer delete(file)
     seedPreFmt := strings.split(lines[0], " ")[1:]
-    seeds : [dynamic]i64
+    seeds : [dynamic]int
+    defer delete(seeds)
     for i, index in seedPreFmt {
-        seed, _ := strconv.parse_i64(i)
+        seed, _ := strconv.parse_int(i)
         append(&seeds, seed)
     }
-    seedMapPt1 := map[i64]Seed {}
-    seedMapPt2 := map[i64]Seed {}
-    defer delete(seedMapPt1)
-    defer delete(seedMapPt2)
-    pool: thread.Pool
-    thread.pool_init(&pool, allocator=context.allocator, thread_count=6)
-    defer thread.pool_destroy(&pool)
-    thread.pool_start(&pool)
-    for i, ii in seeds { // fill seed map 1 with relevant seeds
-        data := new(TaskData)
-        data.lines = lines
-        data.seed = i
-        thread.pool_add_task(
-            &pool,
-            context.allocator,
-            buildSeed,
-            data,
-            user_index=ii,
-        )
-    }
-    thread.pool_finish(&pool)
-    for {
-        task, ok := thread.pool_pop_done(&pool)
-        if !ok do break 
-        data := transmute(^TaskData)task.data
-        seedMapPt1[data.seed] = data.seedStruct
-        free(data)
-    }
-    lowest : i64
-    for seed, i in seedMapPt1 {
-        if lowest == 0 {
-            lowest = seedMapPt1[seed].loc
-        } else if seedMapPt1[seed].loc < lowest {
-            lowest = seedMapPt1[seed].loc
-        }
-    }
-    fmt.println("Lowest loc # pt 1:", lowest)
+    fmt.println("Lowest location # pt 1:", part1(seeds, lines))
 
-    thread.pool_init(&pool, allocator=context.allocator, thread_count=6)
-    thread.pool_start(&pool)
-    for seed, ii in seeds[0]..<seeds[0]+seeds[1] {
-        data := new(TaskData)
-        data.lines = lines
-        data.seed = seed
-        thread.pool_add_task(
-            &pool,
-            context.allocator,
-            buildSeed,
-            data,
-            user_index=ii,
-        )
+    // Part 2
+    ranges : [dynamic]Range
+    for i := 0; i < len(seeds); i += 2 {
+        append(&ranges, Range{seeds[i], seeds[i] + seeds[i+ 1]})
     }
-    thread.pool_finish(&pool)
-    for {
-        task, ok := thread.pool_pop_done(&pool)
-        if !ok do break 
-        data := transmute(^TaskData)task.data
-        seedMapPt2[data.seed] = data.seedStruct
-        free(data)
-    }
-    thread.pool_init(&pool, allocator=context.allocator, thread_count=6)
-    thread.pool_start(&pool)
-    for seed, ii in seeds[2]..<seeds[2]+seeds[3] {
-        data := new(TaskData)
-        data.lines = lines
-        data.seed = seed
-        thread.pool_add_task(
-            &pool,
-            context.allocator,
-            buildSeed,
-            data,
-            user_index=ii,
-        )
-    }
-    thread.pool_finish(&pool)
-    for {
-        task, ok := thread.pool_pop_done(&pool)
-        if !ok do break 
-        data := transmute(^TaskData)task.data
-        seedMapPt2[data.seed] = data.seedStruct
-        free(data)
-    }
-    lowestPt2 : i64
-    for seed, i in seedMapPt2 {
-        if lowestPt2 == 0 {
-            lowestPt2 = seedMapPt2[seed].loc
-        } else if seedMapPt2[seed].loc < lowestPt2 {
-            lowestPt2 = seedMapPt2[seed].loc
-        }
-    }
-    fmt.println("Lowest loc # pt 2:", lowestPt2)
+    fmt.println("Lowest location # pt 2:", part2(ranges, lines))
 }
 
-buildSeed :: proc(task: thread.Task) {
-    data := transmute(^TaskData)task.data
-    using data
-    soil := parseMap(lines[1], seed)
-    fert := parseMap(lines[2], soil)
-    water := parseMap(lines[3], fert)
-    light := parseMap(lines[4], water)
-    temp := parseMap(lines[5], light)
-    humidity := parseMap(lines[6], temp)
-    loc := parseMap(lines[7], humidity)
-    fmt.println("Done:", task.user_index)
-    seedStruct = Seed{soil,fert,water,light,temp,humidity,loc}
-}
-
-parseMap :: proc(input: string, target: i64) -> i64 {
-    inputFmt1 := strings.split_lines(input)[1:]
-    instructions : [dynamic][3]i64
-    for i, index in inputFmt1 {
-        lineSplit := strings.split(i, " ")
-        defer delete(lineSplit)
-        temp : [3]i64
-        for num, index in lineSplit {
-            numi64, _ := strconv.parse_i64(num)
-            temp[index] = numi64
+part1 :: proc(seeds: [dynamic]int, lines: []string) -> int {
+    seeds := seeds
+    for block in lines[1:] {
+        instructions : [dynamic]Instruction
+        defer delete(instructions)
+        for line in strings.split_lines(block)[1:] {
+            lineFmt := [3]int{}
+            linePreFmt, _ := strings.split(line, " ")
+            for i, index2 in linePreFmt {
+                f, _ := strconv.parse_int(i)
+                lineFmt[index2] = f
+            }
+            instruction := Instruction{lineFmt[0], lineFmt[1], lineFmt[2]}
+            append(&instructions, instruction)
         }
-        append(&instructions, temp)
-    }
-    ans : i64 = parseInstructions(instructions, target)
-    return ans
-}
-
-parseInstructions :: proc(instructions: [dynamic][3]i64, target: i64) -> i64 {
-    defer delete(instructions)
-    for instruction in instructions{
-        final := instruction[0]
-        if target < instruction[1] do continue
-        if target > instruction[1]+instruction[2] do continue
-        if target < instruction[1]+instruction[2]/2 {
-            for loc, i in instruction[1]..<instruction[1]+instruction[2]/2 {
-                if loc == target {
-                    return final
-                }
-                final += 1
-                if i % 1000 == 0 {
-                    thread.yield()
+        newPt1 : [dynamic]int
+        for seed in seeds {
+            loopBool : bool = false
+            for instruction in instructions {
+                if instruction.srcRangeStart <= seed && seed < instruction.srcRangeStart + instruction.rangeLen {
+                    append(&newPt1, seed - instruction.srcRangeStart + instruction.destRangeStart)
+                    loopBool = true
+                    break
                 }
             }
-        } else if target > instruction[1]+instruction[2]/2 {
-            final += instruction[2]/2
-            for loc, i in instruction[1]+instruction[2]/2..<instruction[1]+instruction[2] {
-                if loc == target {
-                    return final
-                }
-                final += 1
-                if i % 1000 == 0 {
-                    thread.yield()
-                }
+            if !loopBool {
+                append(&newPt1, seed)
             }
         }
-        // thread.yield()
+        seeds = newPt1
     }
-    return target
+    lowest : int = 0x7fffffffffffffff
+    for seed in seeds {
+        lowest = math.min(lowest, seed)
+    }
+    return lowest
+}
+
+part2 :: proc(ranges: [dynamic]Range, lines: []string) -> int {
+    ranges := ranges
+    for block in lines[1:] {
+        instructions : [dynamic]Instruction
+        defer delete(instructions)
+        for line in strings.split_lines(block)[1:] {
+            lineFmt := [3]int{}
+            linePreFmt, _ := strings.split(line, " ")
+            for i, index2 in linePreFmt {
+                f, _ := strconv.parse_int(i)
+                lineFmt[index2] = f
+            }
+            instruction := Instruction{lineFmt[0], lineFmt[1], lineFmt[2]}
+            append(&instructions, instruction)
+        }
+        newPt2 : [dynamic]Range
+        for len(ranges) > 0 {
+            range := pop(&ranges)
+            s := range.start
+            e := range.end
+            loopBool : bool = false
+            for instruction in instructions {
+                overlapStart := math.max(s, instruction.srcRangeStart)
+                overlapEnd := math.min(e, instruction.srcRangeStart + instruction.rangeLen)
+                if overlapStart < overlapEnd {
+                    loopBool = true
+                    append(&newPt2, Range{
+                        overlapStart - instruction.srcRangeStart + instruction.destRangeStart,
+                        overlapEnd - instruction.srcRangeStart + instruction.destRangeStart,
+                    })
+                    if overlapStart > s {
+                        append(&ranges, Range{s, overlapStart})
+                    }
+                    if e > overlapEnd {
+                        append(&ranges, Range{overlapEnd, e})
+                    }
+                    break
+                }
+            }
+            if !loopBool do append(&newPt2, Range{s, e})
+        }
+        ranges = newPt2
+    }
+    lowest : int = 0x7fffffffffffffff
+    for range in ranges {
+        lowest = math.min(lowest, range.start)
+    }
+    return lowest
 }
