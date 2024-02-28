@@ -34,6 +34,7 @@ main :: proc() {
 
     // Part 2
     ranges : [dynamic]Range
+    defer delete(ranges)
     for i := 0; i < len(seeds); i += 2 {
         append(&ranges, Range{seeds[i], seeds[i] + seeds[i+ 1]})
     }
@@ -56,6 +57,7 @@ part1 :: proc(seeds: [dynamic]int, lines: []string) -> int {
             append(&instructions, instruction)
         }
         newPt1 : [dynamic]int
+        defer delete(newPt2)
         for seed in seeds {
             loopBool : bool = false
             for instruction in instructions {
@@ -94,6 +96,7 @@ part2 :: proc(ranges: [dynamic]Range, lines: []string) -> int {
             append(&instructions, instruction)
         }
         newPt2 : [dynamic]Range
+        defer delete(newPt2)
         for len(ranges) > 0 {
             range := pop(&ranges)
             s := range.start
