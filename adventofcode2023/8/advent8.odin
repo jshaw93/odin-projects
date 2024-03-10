@@ -11,29 +11,41 @@ NetNode :: struct {
 }
 
 main :: proc() {
-    handle, err := os.open("example.txt")
+    handle, err := os.open("input.txt")
     defer os.close(handle)
     file, success := os.read_entire_file_from_handle(handle)
     lines, _ := strings.split(string(file), "\r\n")
     defer delete(file)
     instructions := utf8.string_to_runes(lines[0])
-    netMap : map[string]NetNode = {}
+    netMap := make(map[string]NetNode)
     defer delete(netMap)
     for line in lines[2:] {
         node, netNode := parseNetMap(line)
         netMap[node] = netNode
     }
-    
     // Part 1
-    
+    current : string = "AAA"
+    index : int = 0
+    count : int = 0
+    for current != "ZZZ" {
+        node, ok := netMap[current]
+        side : rune = instructions[index]
+        if side == 'L' {
+            current = node.left
+        } else {
+            current = node.right
+        }
+        index += 1
+        if index > len(instructions) - 1 do index = 0
+        count += 1
+    }
+    fmt.println(count)
 }
 
 parseNetMap :: proc(line: string) -> (string, NetNode) {
     node : string
     pt1 : string
     pt2 : string
-    defer delete(pt1)
-    defer delete(pt2)
     current : [dynamic]rune
     for char in line {
         if char == ' ' {
