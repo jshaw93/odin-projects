@@ -29,5 +29,5 @@ main :: proc() {
 }
 
 index :: proc(req: ^http.Request, res: ^http.Response) {
-    http.respond_file(res, "pages/index.html")
+    http.respond_file(res, "static/index.html")
 }
