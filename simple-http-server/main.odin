@@ -18,6 +18,7 @@ main :: proc() {
     http.router_init(&router)
     defer http.router_destroy(&router)
 
+    // Create route for website, localhost:8000/ resolves to the index procedure
     http.route_get(&router, "/", http.handler(index))
 
     routed := http.router_handler(&router)
