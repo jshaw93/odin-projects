@@ -57,7 +57,7 @@ part1 :: proc(seeds: [dynamic]int, lines: []string) -> int {
             append(&instructions, instruction)
         }
         newPt1 : [dynamic]int
-        defer delete(newPt2)
+        defer delete(newPt1)
         for seed in seeds {
             loopBool : bool = false
             for instruction in instructions {
