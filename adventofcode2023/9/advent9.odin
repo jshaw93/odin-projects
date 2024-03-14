@@ -4,7 +4,6 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 import "core:strconv"
-import "core:math"
 
 main :: proc() {
     handle, err := os.open("input.txt")
