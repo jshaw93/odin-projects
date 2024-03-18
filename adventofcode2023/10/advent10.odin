@@ -45,7 +45,7 @@ main :: proc() {
         row := pos.y
         char := lines[row][col]
         // up
-        if row > 0 && charInString(rune(char), "S|JL") && charInString(rune(lines[row-1][col]), "|7F") && !posInSeen(seen[:], Pos{col, row-1}) {
+        if row > 0 && charInString(rune(char), "S|JL") && charInString(rune(lines[row-1][col]), "|7F") && !posInArray(seen[:], Pos{col, row-1}) {
             append(&seen, Pos{col, row-1})
             append(&queue, Pos{col, row-1})
             if char == 'S' {
@@ -53,7 +53,7 @@ main :: proc() {
             }
         }
         // down
-        if row < len(lines) - 1 && charInString(rune(char), "S|7F") && charInString(rune(lines[row+1][col]), "|JL") && !posInSeen(seen[:], Pos{col, row+1}) {
+        if row < len(lines) - 1 && charInString(rune(char), "S|7F") && charInString(rune(lines[row+1][col]), "|JL") && !posInArray(seen[:], Pos{col, row+1}) {
             append(&seen, Pos{col, row+1})
             append(&queue, Pos{col, row+1})
             if char == 'S' {
@@ -61,7 +61,7 @@ main :: proc() {
             }
         }
         // left
-        if col > 0 && charInString(rune(char), "S-J7") && charInString(rune(lines[row][col-1]), "-LF") && !posInSeen(seen[:], Pos{col-1, row}) {
+        if col > 0 && charInString(rune(char), "S-J7") && charInString(rune(lines[row][col-1]), "-LF") && !posInArray(seen[:], Pos{col-1, row}) {
             append(&seen, Pos{col-1, row})
             append(&queue, Pos{col-1, row})
             if char == 'S' {
@@ -69,7 +69,7 @@ main :: proc() {
             }
         }
         // right
-        if col < len(lines[row]) - 1 && charInString(rune(char), "S-LF") && charInString(rune(lines[row][col+1]), "-J7") && !posInSeen(seen[:], Pos{col+1, row}) {
+        if col < len(lines[row]) - 1 && charInString(rune(char), "S-LF") && charInString(rune(lines[row][col+1]), "-J7") && !posInArray(seen[:], Pos{col+1, row}) {
             append(&seen, Pos{col+1, row})
             append(&queue, Pos{col+1, row})
             if char == 'S' {
@@ -100,7 +100,7 @@ main :: proc() {
     // Replace garbage pipes not in loop with '.'
     for row, r in lines {
         for char, c in row {
-            if !posInSeen(seen[:], Pos{c, r}) {
+            if !posInArray(seen[:], Pos{c, r}) {
                 newChar := '.'
                 append(&replace, newChar)
                 continue
@@ -143,7 +143,7 @@ main :: proc() {
     // // Print representation of outside characters
     // for r in 0..<len(lines) {
     //     for c in 0..<len(lines[r]) {
-    //         if posInSeen(exclude(outside[:], seen[:]), Pos{c, r}) do fmt.print("#")
+    //         if posInArray(exclude(outside[:], seen[:]), Pos{c, r}) do fmt.print("#")
     //         else do fmt.print(".")
     //     }
     //     fmt.print("\n")
@@ -158,7 +158,7 @@ charInString :: proc(char: rune, str: string) -> bool {
     return false
 }
 
-posInSeen :: proc(seen: []Pos, pos: Pos) -> bool {
+posInArray :: proc(seen: []Pos, pos: Pos) -> bool {
     for i in seen {
         if i == pos do return true
     }
@@ -190,10 +190,10 @@ exclude :: proc(first: []Pos, second: []Pos) -> []Pos {
 setUnion :: proc(first: []Pos, second: []Pos) -> []Pos {
     res : [dynamic]Pos
     for i in first {
-        if !posInSeen(res[:], i) do append(&res, i)
+        if !posInArray(res[:], i) do append(&res, i)
     }
     for i in second {
-        if !posInSeen(res[:], i) do append(&res, i)
+        if !posInArray(res[:], i) do append(&res, i)
     }
     return res[:]
 }
